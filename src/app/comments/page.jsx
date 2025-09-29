@@ -31,7 +31,6 @@ int main() {
   }
 
   function goToNextPhase() {
-    // save output to localStorage so phase2 can read it
     if (output) {
       localStorage.setItem("phase1Output", output);
       router.push("/whitespace");
@@ -41,47 +40,54 @@ int main() {
   }
 
   return (
-    <>
-      <div className="p-4 bg-gray-900 text-green-200 rounded-lg shadow-lg">
-        <h1 className="text-white font-semibold">Phase 1: Remove Comments</h1>
-        <textarea
-          className="w-full h-56 bg-gray-800 text-green-200 rounded p-3 font-mono text-sm"
-          value={source}
-          onChange={(e) => setSource(e.target.value)}
-        />
-        <button
-          onClick={handleRemove}
-          className="mt-2 px-4 py-2 rounded bg-emerald-500 text-white"
-        >
-          Remove Comments
-        </button>
+    <div className="min-h-screen flex flex-col bg-gray-950">
+      <div className="flex-1 w-full max-w-4xl mx-auto px-3 sm:px-6 py-6">
+        {/* Header */}
+        <h1 className="text-lg sm:text-xl md:text-2xl text-white font-semibold mb-4">
+          Phase 1: Remove Comments
+        </h1>
+
+        {/* Input Box */}
+        <div className="p-4 bg-gray-900 text-green-200 rounded-lg shadow-lg">
+          <textarea
+            className="w-full h-56 sm:h-64 md:h-72 bg-gray-800 text-green-200 rounded p-3 font-mono text-sm sm:text-base resize-y"
+            value={source}
+            onChange={(e) => setSource(e.target.value)}
+          />
+          <button
+            onClick={handleRemove}
+            className="mt-3 w-full sm:w-auto px-4 py-2 rounded bg-emerald-500 text-white hover:bg-emerald-600 transition"
+          >
+            Remove Comments
+          </button>
+        </div>
+
+        {/* Output Box */}
+        <div className="mt-6 p-4 bg-green-300 rounded-lg shadow-lg">
+          <h2 className="font-semibold text-gray-900 mb-2">Output</h2>
+          {output ? (
+            <pre className="bg-green-600 rounded p-3 text-white text-xs sm:text-sm overflow-x-auto">
+              <code>{output}</code>
+            </pre>
+          ) : (
+            <p className="text-gray-700 text-sm">No output yet</p>
+          )}
+        </div>
       </div>
 
-      <div className="mt-6 p-4 bg-green-300 rounded-lg shadow-lg">
-        <h2 className="font-semibold">Output</h2>
-        {output ? (
-          <pre className="bg-green-600 rounded p-3 text-white">
-            <code>{output}</code>
-          </pre>
-        ) : (
-          <p className="text-gray-700">No output yet</p>
-        )}
-      </div>
-
-      {/* Footer navigation button - only show when Phase 1 is done */}
-{output && (
-  <div className="inset-x-0 z-50 border-t border-yellow-600 bg-yellow-500/90 backdrop-blur">
-    <div className="mx-auto max-w-4xl px-4 py-3 flex justify-end">
-      <button
-        onClick={goToNextPhase}
-        className="px-6 py-2 rounded bg-blue-600 text-white hover:opacity-90"
-      >
-        Next Phase → Remove White Space
-      </button>
+      {/* Sticky Footer */}
+      {output && (
+        <div className="sticky bottom-0 inset-x-0 z-50 border-t border-yellow-600 bg-yellow-500/95 backdrop-blur">
+          <div className="mx-auto max-w-4xl px-3 sm:px-6 py-3 flex justify-center sm:justify-end">
+            <button
+              onClick={goToNextPhase}
+              className="w-full sm:w-auto px-6 py-2 rounded bg-blue-600 text-white hover:opacity-90 transition"
+            >
+              Next Phase → Remove White Space
+            </button>
+          </div>
+        </div>
+      )}
     </div>
-  </div>
-)}
-
-    </>
   );
 }
