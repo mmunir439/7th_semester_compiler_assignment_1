@@ -32,6 +32,7 @@ const CPP_KEYWORDS = new Set([
   // misc
   "sizeof","typeid","alignof","alignas","constexpr","consteval","constinit",
   "export","import","requires","concept","co_await","co_yield","co_return"
+  ,"fun","println"
 ]);
 
 export default function KeywordsPhase() {
@@ -40,31 +41,40 @@ export default function KeywordsPhase() {
   const [keywords, setKeywords] = useState([]);       // [{value,index}]
   const router = useRouter();
 
-  // Load output from Phase 3
+  // Load output from Phase 3 and auto-run recognition
   useEffect(() => {
     const prev = localStorage.getItem("phase3Code");
-    if (prev) setCode(prev);
-  }, []);
+    if (prev) {
+      // Load input from previous phase but do NOT auto-run recognition.
+      // User should click the button to run recognition.
+      setCode(prev);
+    } else {
+      alert("No output from previous phase found. Please complete Phase 3 first.");
+      router.push("/constants");
+    }
+  }, [router]);
 
-  function recognizeKeywords() {
+  function recognizeKeywords(input) {
     // We'll scan only word tokens ([A-Za-z_]\w*) and match against the keyword set.
     const WORD_RE = /[A-Za-z_]\w*/g;
+    const src = typeof input === "string" ? input : code;
 
     let html = "";
     let last = 0;
     const found = [];
 
-    for (const m of code.matchAll(WORD_RE)) {
+    for (const m of src.matchAll(WORD_RE)) {
       const word = m[0];
       const start = m.index ?? 0;
       const end = start + word.length;
 
       // Append plain text before this token (escaped)
-      html += escapeHtml(code.slice(last, start));
+      html += escapeHtml(src.slice(last, start));
 
       if (CPP_KEYWORDS.has(word)) {
         found.push({ value: word, index: start });
-        html += `<mark class="rounded px-1 font-semibold" style="background:#34d399;">${escapeHtml(
+        // use the same light-green highlight as constants
+        html += `<mark class="rounded px-1 font-semibold" style="background:#bbf7d0;color:#064e3b;padding:0.125rem 0.25rem;border-radius:0.25rem;">${escapeHtml(
           word
         )}</mark>`;
       } else {
@@ -73,12 +83,16 @@ export default function KeywordsPhase() {
       last = end;
     }
     // Tail
-    html += escapeHtml(code.slice(last));
+    html += escapeHtml(src.slice(last));
 
     setHighlighted(html);
     setKeywords(found);
+    try {
+      alert("Keywords recognized successfully!");
+    } catch (e) {
+      // ignore
+    }
   }
-
   function goToIdentifiers() {
     // Save code for the next phase (you can also save highlighted if needed)
     localStorage.setItem("phase4Code", code);
@@ -88,77 +102,53 @@ export default function KeywordsPhase() {
   const hasOutput = highlighted.length > 0;
 
   return (
-    <>
-      {/* Top card (same layout as earlier phases) */}
-      <div className="p-4 bg-gray-900 text-green-200 rounded-lg shadow-lg">
-        <h1 className="text-white font-semibold">Phase 4: Recognize Keywords</h1>
-        <textarea
-          className="w-full h-56 bg-gray-800 text-green-200 rounded p-3 font-mono text-sm"
-          value={code}
-          onChange={(e) => setCode(e.target.value)}
-        />
-        <button
-          onClick={recognizeKeywords}
-          className="mt-2 px-4 py-2 rounded bg-purple-600 text-white"
-        >
-          Recognize Keywords
-        </button>
-      </div>
+    <div className="min-h-screen bg-white flex flex-col items-center justify-center p-4">
+      <div className="w-full max-w-5xl p-6 md:p-10 bg-white rounded-2xl shadow-lg border border-gray-200 mx-auto transition-all">
+        <h1 className="text-center text-2xl md:text-3xl font-bold text-green-700 mb-6">Lexical Analyzer – Phase 4: Recognize Keywords</h1>
 
-      {/* Output card (same green style as Phase 1/3) */}
-      <div className="mt-6 p-4 bg-green-300 rounded-lg shadow-lg">
-        <h2 className="font-semibold">Output</h2>
-        {hasOutput ? (
-          <pre className="bg-green-600 rounded p-3 text-white text-sm overflow-x-auto">
-            <code dangerouslySetInnerHTML={{ __html: highlighted }} />
-          </pre>
-        ) : (
-          <p className="text-gray-700">Click “Recognize Keywords” to see the result.</p>
-        )}
-      </div>
+        {/* Input + Output Boxes */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+          {/* Input Box */}
+          <div className="rounded-lg bg-gray-50 border border-gray-200 p-5 shadow-sm min-h-[250px] overflow-auto max-h-[400px]">
+            <h2 className="text-lg font-semibold text-green-700 mb-3 text-center">Input Code (from Previous Phase)</h2>
+            {code ? (
+              <pre className="font-mono text-xs md:text-sm text-gray-800 whitespace-pre-wrap break-words"><code>{code}</code></pre>
+            ) : (
+              <p className="text-gray-400 text-center">No input available</p>
+            )}
+          </div>
 
-      {/* Summary table */}
-      {hasOutput && (
-        <div className="mt-4 p-4 bg-green-400 rounded-lg shadow border overflow-x-auto">
-          <h3 className="font-semibold mb-2">Detected keywords ({keywords.length})</h3>
-          {keywords.length === 0 ? (
-            <p className="text-gray-600">No keywords found.</p>
-          ) : (
-            <table className="min-w-full text-sm">
-              <thead>
-                <tr className="text-left border-b">
-                  <th className="py-2 pr-4">#</th>
-                  <th className="py-2 pr-4">Keyword</th>
-                  <th className="py-2 pr-4">Index</th>
-                </tr>
-              </thead>
-              <tbody>
-                {keywords.map((k, i) => (
-                  <tr key={`${k.value}-${k.index}-${i}`} className="border-b">
-                    <td className="py-2 pr-4">{i + 1}</td>
-                    <td className="py-2 pr-4 font-mono">{k.value}</td>
-                    <td className="py-2 pr-4">{k.index}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          {/* Output Box */}
+          {hasOutput && (
+            <div className="rounded-lg bg-gray-50 border border-gray-200 p-5 shadow-sm min-h-[250px] overflow-auto max-h-[400px]">
+              <h2 className="text-lg font-semibold text-green-700 mb-3 text-center">Output (Keywords Highlighted)</h2>
+              <div className="flex items-center justify-center mb-3">
+                <div className="inline-flex items-center px-3 py-1 rounded-full bg-green-200 text-green-900 font-semibold">{keywords.length}</div>
+              </div>
+              <pre className="font-mono text-xs md:text-sm text-gray-800 whitespace-pre-wrap break-words"><code dangerouslySetInnerHTML={{ __html: highlighted }} /></pre>
+            </div>
           )}
         </div>
-      )}
 
-      {/* SAME fixed footer behavior */}
-      {hasOutput && (
-        <div className="inset-x-0 z-50 border-t border-yellow-600 bg-yellow-500/90 backdrop-blur">
-          <div className="mx-auto max-w-4xl px-4 py-3 flex justify-end">
+        {/* Recognize button (outside input card) */}
+        {!hasOutput && code && (
+          <div className="flex justify-center mt-6">
             <button
-              onClick={goToIdentifiers}
-              className="px-6 py-2 rounded bg-blue-600 text-white hover:opacity-90"
+              onClick={() => recognizeKeywords()}
+              className="px-8 py-3 bg-green-300 hover:bg-green-400 text-gray-800 font-semibold rounded-lg shadow-md transition-transform transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-green-200"
             >
-              Next Phase → Recognize Identifiers
+              Recognize Keywords
             </button>
           </div>
-        </div>
-      )}
-    </>
+        )}
+
+        {/* Next Step Button (after recognition) */}
+        {hasOutput && (
+          <div className="flex justify-center mt-8">
+            <button onClick={goToIdentifiers} className="px-8 py-3 bg-green-300 hover:bg-green-400 text-gray-800 font-semibold rounded-lg shadow-md transition-transform transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-green-200">Next Phase → Recognize Identifiers</button>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }

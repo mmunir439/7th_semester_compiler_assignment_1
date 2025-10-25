@@ -23,6 +23,7 @@ const CPP_KEYWORDS = new Set([
   "true","false","nullptr",
   "sizeof","typeid","alignof","alignas","constexpr","consteval","constinit",
   "export","import","requires","concept","co_await","co_yield","co_return"
+  ,"fun","println"
 ]);
 
 const STRING_OR_CHAR_RE = /"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])'/g;
@@ -34,10 +35,18 @@ export default function IdentifiersPhase() {
   const [idents, setIdents] = useState([]);
   const router = useRouter();
 
+  // Load Phase 4 output and auto-run recognition
   useEffect(() => {
     const prev = localStorage.getItem("phase4Code");
-    if (prev) setCode(prev);
-  }, []);
+    if (prev) {
+      // Load input from previous phase but do NOT auto-run recognition.
+      // User should click the button to run recognition.
+      setCode(prev);
+    } else {
+      alert("No output from previous phase found. Please complete Phase 4 first.");
+      router.push("/keywords");
+    }
+  }, [router]);
 
   function recognizeIdentifiers() {
     const skipSpans = [];
@@ -63,7 +72,8 @@ export default function IdentifiersPhase() {
         html += escapeHtml(name);
       } else {
         found.push({ name, index: start });
-        html += `<mark class="rounded px-1" style="background:#60a5fa;">${escapeHtml(
+        // light green highlight (match constants/keywords style)
+        html += `<mark class="rounded px-1" style="background:#bbf7d0;color:#064e3b;padding:0.125rem 0.25rem;border-radius:0.25rem;">${escapeHtml(
           name
         )}</mark>`;
       }
@@ -74,6 +84,11 @@ export default function IdentifiersPhase() {
 
     setHighlighted(html);
     setIdents(found);
+    try {
+      alert("Identifiers recognized successfully!");
+    } catch (e) {
+      // ignore
+    }
   }
 
   function goToNext() {
@@ -84,90 +99,55 @@ export default function IdentifiersPhase() {
   const hasOutput = highlighted.length > 0;
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-950">
-      <div className="flex-1 w-full max-w-4xl mx-auto px-3 sm:px-6 py-6">
-        {/* Header */}
-        <h1 className="text-lg sm:text-xl md:text-2xl text-white font-semibold mb-4">
-          Phase 5: Recognize Identifiers
-        </h1>
+    <div className="min-h-screen bg-white flex flex-col items-center justify-center p-4">
+      <div className="w-full max-w-5xl p-6 md:p-10 bg-white rounded-2xl shadow-lg border border-gray-200 mx-auto transition-all">
+        <h1 className="text-center text-2xl md:text-3xl font-bold text-green-700 mb-6">Lexical Analyzer – Phase 5: Recognize Identifiers</h1>
 
-        {/* Input Box */}
-        <div className="p-4 bg-gray-900 text-green-200 rounded-lg shadow-lg">
-          <textarea
-            className="w-full h-56 sm:h-64 md:h-72 bg-gray-800 text-green-200 rounded p-3 font-mono text-sm sm:text-base resize-y"
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
-          />
-          <button
-            onClick={recognizeIdentifiers}
-            className="mt-3 w-full sm:w-auto px-4 py-2 rounded bg-purple-600 text-white hover:bg-purple-700 transition"
-          >
-            Recognize Identifiers
-          </button>
-        </div>
+        {/* Input + Output Boxes */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+          {/* Input Box */}
+          <div className="rounded-lg bg-gray-50 border border-gray-200 p-5 shadow-sm min-h-[250px] overflow-auto max-h-[400px]">
+            <h2 className="text-lg font-semibold text-green-700 mb-3 text-center">Input Code (from Previous Phase)</h2>
+            {code ? (
+              <>
+                <pre className="font-mono text-xs md:text-sm text-gray-800 whitespace-pre-wrap break-words"><code>{code}</code></pre>
+              </>
+            ) : (
+              <p className="text-gray-400 text-center">No input available</p>
+            )}
+          </div>
 
-        {/* Output Box */}
-        <div className="mt-6 p-4 bg-green-300 rounded-lg shadow-lg">
-          <h2 className="font-semibold text-gray-900 mb-2">Output</h2>
-          {hasOutput ? (
-            <pre className="bg-green-600 rounded p-3 text-white text-xs sm:text-sm overflow-x-auto">
-              <code dangerouslySetInnerHTML={{ __html: highlighted }} />
-            </pre>
-          ) : (
-            <p className="text-gray-700 text-sm">
-              Click “Recognize Identifiers” to see the result.
-            </p>
+          {/* Output Box */}
+          {hasOutput && (
+            <div className="rounded-lg bg-gray-50 border border-gray-200 p-5 shadow-sm min-h-[250px] overflow-auto max-h-[400px]">
+              <h2 className="text-lg font-semibold text-green-700 mb-3 text-center">Output (Identifiers Highlighted)</h2>
+              <div className="flex items-center justify-center mb-3">
+                <div className="inline-flex items-center px-3 py-1 rounded-full bg-green-200 text-green-900 font-semibold">{idents.length}</div>
+              </div>
+              <pre className="font-mono text-xs md:text-sm text-gray-800 whitespace-pre-wrap break-words"><code dangerouslySetInnerHTML={{ __html: highlighted }} /></pre>
+            </div>
           )}
         </div>
 
-        {/* Summary */}
+        {/* Recognize Button (moved outside input card) */}
+        {code && !hasOutput && (
+          <div className="flex justify-center mt-6">
+            <button
+              onClick={recognizeIdentifiers}
+              className="px-8 py-3 bg-green-300 hover:bg-green-400 text-gray-800 font-semibold rounded-lg shadow-md transition-transform transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-green-200"
+            >
+              Recognize Identifiers
+            </button>
+          </div>
+        )}
+
+        {/* Next Step Button (after recognition) */}
         {hasOutput && (
-          <div className="mt-4 p-4 bg-green-500 rounded-lg shadow border overflow-x-auto">
-            <h3 className="font-semibold mb-2">
-              Detected identifiers ({idents.length})
-            </h3>
-            {idents.length === 0 ? (
-              <p className="text-gray-700">No identifiers found.</p>
-            ) : (
-              <table className="min-w-full text-xs sm:text-sm">
-                <thead>
-                  <tr className="text-left border-b">
-                    <th className="py-2 pr-4">#</th>
-                    <th className="py-2 pr-4">Identifier</th>
-                    <th className="py-2 pr-4">Index</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {idents.map((it, i) => (
-                    <tr
-                      key={`${it.name}-${it.index}-${i}`}
-                      className="border-b last:border-0"
-                    >
-                      <td className="py-2 pr-4">{i + 1}</td>
-                      <td className="py-2 pr-4 font-mono">{it.name}</td>
-                      <td className="py-2 pr-4">{it.index}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
+          <div className="flex justify-center mt-8">
+            <button onClick={goToNext} className="px-8 py-3 bg-green-300 hover:bg-green-400 text-gray-800 font-semibold rounded-lg shadow-md transition-transform transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-green-200">Next Phase → Operators & punctuation</button>
           </div>
         )}
       </div>
-
-      {/* Sticky Footer */}
-      {hasOutput && (
-        <div className="sticky bottom-0 inset-x-0 z-50 border-t border-yellow-600 bg-yellow-500/95 backdrop-blur">
-          <div className="mx-auto max-w-4xl px-3 sm:px-6 py-3 flex justify-center sm:justify-end">
-            <button
-              onClick={goToNext}
-              className="w-full sm:w-auto px-6 py-2 rounded bg-blue-600 text-white hover:opacity-90 transition"
-            >
-              Next Phase → Operators & punctuation
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

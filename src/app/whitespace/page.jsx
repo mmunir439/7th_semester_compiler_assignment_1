@@ -1,92 +1,107 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-export default function Phase2() {
+export default function WhiteSpacePhase() {
   const [code, setCode] = useState("");
   const [output, setOutput] = useState("");
+  const [showOutput, setShowOutput] = useState(false);
   const router = useRouter();
 
-  // Load Phase1 output
+  // ✅ Load output from previous phase (Phase 1)
   useEffect(() => {
-    const prev = localStorage.getItem("phase1Output");
-    if (prev) setCode(prev);
-  }, []);
+    const prevOutput = localStorage.getItem("phase1Output");
+    if (prevOutput) {
+      setCode(prevOutput);
+    } else {
+      alert("No output from previous phase found. Please complete Phase 1 first.");
+      router.push("/comments");
+    }
+  }, [router]);
 
+  // ✅ Remove white spaces function
   function removeWhitespace(text) {
-    // collapse spaces/tabs/newlines into a single space and trim ends
     return text.replace(/\s+/g, " ").trim();
   }
 
-  function handleRemove() {
-    setOutput(removeWhitespace(code));
+  // ✅ Handle button click
+  function handleRemoveWhiteSpaces() {
+    if (!code.trim()) {
+      alert("No code available to process.");
+      return;
+    }
+    const cleaned = removeWhitespace(code);
+    setOutput(cleaned);
+    setShowOutput(true);
+    localStorage.setItem("phase2Output", cleaned);
+    alert("White spaces removed successfully!");
   }
 
+  // ✅ Navigate to next phase
   function goToNextPhase() {
-    if (output) {
-      localStorage.setItem("phase2Output", output);
-      router.push("/constants");
-    } else {
-      alert("Please click “Remove White Space” first.");
-    }
+    router.push("/constants");
   }
 
   return (
-    <div className="p-4 md:p-6 lg:p-8 max-w-5xl mx-auto space-y-6">
-      {/* Input Section */}
-      <div className="p-4 bg-gray-900 text-green-200 rounded-lg shadow-lg">
-        <h1 className="text-white font-semibold text-lg md:text-xl mb-3">
-          Phase 2: Remove White Space
+    <div className="min-h-screen bg-white flex flex-col items-center justify-center p-4">
+      <div className="w-full max-w-5xl p-6 md:p-10 bg-white rounded-2xl shadow-lg border border-gray-200 mx-auto transition-all">
+        <h1 className="text-center text-2xl md:text-3xl font-bold text-green-700 mb-6">
+          Lexical Analyzer – Phase 2: Remove White Spaces
         </h1>
-        <textarea
-          className="w-full min-h-[200px] md:min-h-[280px] lg:min-h-[320px] 
-                     bg-gray-800 text-green-200 rounded p-3 font-mono text-sm 
-                     resize-y focus:outline-none focus:ring-2 focus:ring-emerald-500"
-          value={code}
-          onChange={(e) => setCode(e.target.value)}
-        />
-        <div className="mt-3 flex flex-col sm:flex-row gap-3">
-          <button
-            onClick={handleRemove}
-            className="px-4 py-2 rounded bg-emerald-500 text-white 
-                       hover:bg-emerald-600 transition"
-          >
-            Remove White Space
-          </button>
+
+        {/* Input + Output Boxes */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+          {/* Input Box */}
+          <div className="rounded-lg bg-gray-50 border border-gray-200 p-5 shadow-sm min-h-[250px] overflow-auto max-h-[400px]">
+            <h2 className="text-lg font-semibold text-green-700 mb-3 text-center">
+              Input Code (from Previous Phase)
+            </h2>
+            {code ? (
+              <pre className="font-mono text-xs md:text-sm text-gray-800 whitespace-pre-wrap break-words">
+                <code>{code}</code>
+              </pre>
+            ) : (
+              <p className="text-gray-400 text-center">No input available</p>
+            )}
+          </div>
+
+          {/* Output Box */}
+          {showOutput && (
+            <div className="rounded-lg bg-gray-50 border border-gray-200 p-5 shadow-sm min-h-[250px] overflow-auto max-h-[400px]">
+              <h2 className="text-lg font-semibold text-green-700 mb-3 text-center">
+                Output (After Removing White Spaces)
+              </h2>
+              <pre className="font-mono text-xs md:text-sm text-gray-800 whitespace-pre-wrap break-words">
+                <code>{output}</code>
+              </pre>
+            </div>
+          )}
         </div>
-      </div>
 
-      {/* Output Section */}
-      <div className="p-4 bg-green-300 rounded-lg shadow-lg">
-        <h2 className="font-semibold text-lg mb-2">Output</h2>
-        {output ? (
-          <pre className="bg-green-600 rounded p-3 text-white overflow-x-auto text-sm md:text-base">
-            <code>{output}</code>
-          </pre>
-        ) : (
-          <p className="text-gray-700">
-            Click “Remove White Space” to see the cleaned program.
-          </p>
-        )}
-      </div>
-
-      {/* Sticky Footer */}
-      {output && (
-        <div className="fixed bottom-0 inset-x-0 z-50 
-                        border-t border-yellow-600 bg-yellow-500/95 
-                        backdrop-blur shadow-lg">
-          <div className="mx-auto max-w-5xl px-4 py-3 flex flex-col sm:flex-row justify-end gap-3">
+        {/* Remove Button */}
+        {!showOutput && (
+          <div className="flex justify-center mt-6">
             <button
-              onClick={goToNextPhase}
-              className="w-full sm:w-auto px-6 py-2 rounded 
-                         bg-blue-600 text-white font-medium 
-                         hover:bg-blue-700 transition"
+              onClick={handleRemoveWhiteSpaces}
+              className="px-8 py-3 bg-green-300 hover:bg-green-400 text-gray-800 font-semibold rounded-lg shadow-md transition-transform transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-green-200"
             >
-              Next Phase → Recognize Constants
+              Remove White Spaces
             </button>
           </div>
-        </div>
-      )}
+        )}
+
+        {/* Next Step Button (after removal) */}
+        {showOutput && (
+          <div className="flex justify-center mt-8">
+            <button
+              onClick={goToNextPhase}
+              className="px-8 py-3 bg-green-300 hover:bg-green-400 text-gray-800 font-semibold rounded-lg shadow-md transition-transform transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-green-200"
+            >
+              Next Step → Recognize Constants
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
