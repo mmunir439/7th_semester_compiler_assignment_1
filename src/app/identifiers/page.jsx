@@ -23,7 +23,7 @@ const CPP_KEYWORDS = new Set([
   "true","false","nullptr",
   "sizeof","typeid","alignof","alignas","constexpr","consteval","constinit",
   "export","import","requires","concept","co_await","co_yield","co_return"
-  ,"fun","println"
+  ,"fun","println","include","isostram"
 ]);
 
 const STRING_OR_CHAR_RE = /"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])'/g;
